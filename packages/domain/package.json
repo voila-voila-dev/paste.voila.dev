@@ -1,0 +1,22 @@
+{
+  "name": "@paste.voila.dev/domain",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./paste": "./src/paste.ts",
+    "./ids": "./src/ids.ts",
+    "./errors": "./src/errors.ts"
+  },
+  "imports": {
+    "#/*": "./src/*"
+  },
+  "scripts": {
+    "check": "biome check",
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  }
+}

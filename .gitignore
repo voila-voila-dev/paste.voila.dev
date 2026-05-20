@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+dist/
+build/
+.tanstack/
+.wrangler/
+.output/
+.vinxi/
+.cache/
+.DS_Store
+*.log
+.screenshots/

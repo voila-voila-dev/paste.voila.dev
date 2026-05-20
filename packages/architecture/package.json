@@ -1,0 +1,35 @@
+{
+  "name": "@paste.voila.dev/architecture",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Architecture layer: Drizzle/Postgres repositories for paste.voila.dev",
+  "exports": {
+    "./repositories/drizzle/client": "./src/repositories/drizzle/client.ts",
+    "./repositories/drizzle/paste-repository": "./src/repositories/drizzle/paste-repository.ts",
+    "./repositories/drizzle/tables/*": "./src/repositories/drizzle/tables/*.ts"
+  },
+  "imports": {
+    "#/*": "./src/*"
+  },
+  "scripts": {
+    "check": "biome check",
+    "check-types": "tsc --noEmit",
+    "database:generate": "drizzle-kit generate --config=src/repositories/drizzle/config/config.ts",
+    "database:migrate": "drizzle-kit migrate --config=src/repositories/drizzle/config/config.ts",
+    "database:studio": "drizzle-kit studio --config=src/repositories/drizzle/config/config.ts",
+    "database:push": "drizzle-kit push --config=src/repositories/drizzle/config/config.ts"
+  },
+  "dependencies": {
+    "@paste.voila.dev/domain": "workspace:*",
+    "drizzle-orm": "^0.38.3"
+  },
+  "peerDependencies": {
+    "@cloudflare/workers-types": "^4.20241218.0"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "drizzle-kit": "^0.30.1",
+    "typescript": "catalog:"
+  }
+}

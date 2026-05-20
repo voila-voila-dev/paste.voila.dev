@@ -1,0 +1,50 @@
+{
+  "name": "@paste.voila.dev/paste.voila.dev",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#/*": "./src/*"
+  },
+  "scripts": {
+    "dev": "vite dev --port 3069",
+    "build": "vite build",
+    "preview": "vite preview --port 3069",
+    "format": "biome format",
+    "lint": "biome lint",
+    "check": "biome check",
+    "check-types": "tsc --noEmit",
+    "deploy": "bun run build && wrangler deploy",
+    "wrangler:dev": "wrangler dev"
+  },
+  "dependencies": {
+    "@cloudflare/vite-plugin": "^1.26.0",
+    "@paste.voila.dev/architecture": "workspace:*",
+    "@paste.voila.dev/domain": "workspace:*",
+    "@paste.voila.dev/ui": "workspace:*",
+    "@phosphor-icons/react": "catalog:react",
+    "@tailwindcss/vite": "catalog:tailwind",
+    "@tanstack/react-devtools": "latest",
+    "@tanstack/react-router": "latest",
+    "@tanstack/react-router-devtools": "latest",
+    "@tanstack/react-start": "latest",
+    "@tanstack/router-plugin": "^1.132.0",
+    "highlight.js": "^11.10.0",
+    "marked": "^15.0.4",
+    "react": "catalog:react",
+    "react-dom": "catalog:react",
+    "tailwindcss": "catalog:tailwind",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@tailwindcss/typography": "catalog:tailwind",
+    "@tanstack/devtools-vite": "latest",
+    "@types/node": "catalog:",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "catalog:",
+    "vite": "^8.0.0",
+    "wrangler": "^4.70.0"
+  }
+}

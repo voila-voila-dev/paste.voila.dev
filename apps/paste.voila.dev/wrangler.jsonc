@@ -1,0 +1,18 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "paste-voila-dev",
+	"compatibility_date": "2025-09-02",
+	"compatibility_flags": ["nodejs_compat"],
+	"main": "@tanstack/react-start/server-entry",
+	"routes": [
+		{ "pattern": "paste.voila.dev", "custom_domain": true }
+	],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "paste-voila",
+			"database_id": "118a3c92-053c-4b81-887d-cecec2ef9cb2",
+			"migrations_dir": "../../packages/architecture/src/repositories/drizzle/migrations"
+		}
+	]
+}

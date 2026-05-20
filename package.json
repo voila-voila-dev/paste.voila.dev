@@ -1,0 +1,45 @@
+{
+  "name": "paste.voila.dev",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.2.23",
+  "scripts": {
+    "format": "biome format --write",
+    "lint": "biome lint --write",
+    "check": "biome check",
+    "dev": "bun run --filter @paste.voila.dev/paste.voila.dev dev",
+    "build": "bun run --filter @paste.voila.dev/paste.voila.dev build",
+    "deploy": "bun run --filter @paste.voila.dev/paste.voila.dev deploy",
+    "db:generate": "bun run --filter @paste.voila.dev/architecture database:generate",
+    "db:migrate:local": "cd apps/paste.voila.dev && bunx wrangler d1 migrations apply paste-voila --local",
+    "db:migrate:remote": "cd apps/paste.voila.dev && bunx wrangler d1 migrations apply paste-voila --remote"
+  },
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ],
+    "catalog": {
+      "@biomejs/biome": "2.4.15",
+      "@types/bun": "1.3.14",
+      "@types/node": "24.0.0",
+      "typescript": "5.7.3"
+    },
+    "catalogs": {
+      "react": {
+        "react": "19.2.0",
+        "react-dom": "19.2.0",
+        "@phosphor-icons/react": "2.1.10"
+      },
+      "tailwind": {
+        "tailwindcss": "4.1.18",
+        "@tailwindcss/vite": "4.1.18",
+        "@tailwindcss/typography": "0.5.16"
+      }
+    }
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:"
+  }
+}
