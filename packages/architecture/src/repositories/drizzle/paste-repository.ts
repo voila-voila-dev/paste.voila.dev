@@ -9,6 +9,7 @@ function toPaste(row: PasteRow): Paste {
 		id: row.id,
 		content: row.content,
 		editToken: row.editToken,
+		title: row.title,
 		createdAt: row.createdAt,
 		updatedAt: row.updatedAt,
 	};
@@ -24,6 +25,7 @@ export class DrizzlePasteRepository implements PasteRepository {
 				id: paste.id,
 				content: paste.content,
 				editToken: paste.editToken,
+				title: paste.title,
 				createdAt: paste.createdAt,
 				updatedAt: paste.updatedAt,
 			})
@@ -42,6 +44,7 @@ export class DrizzlePasteRepository implements PasteRepository {
 			.select({
 				id: pasteTable.id,
 				content: pasteTable.content,
+				title: pasteTable.title,
 				createdAt: pasteTable.createdAt,
 				updatedAt: pasteTable.updatedAt,
 			})
@@ -51,10 +54,10 @@ export class DrizzlePasteRepository implements PasteRepository {
 		return rows;
 	}
 
-	async update(id: string, content: string): Promise<Paste> {
+	async update(id: string, content: string, title: string | null): Promise<Paste> {
 		const [row] = await this.db
 			.update(pasteTable)
-			.set({ content, updatedAt: new Date() })
+			.set({ content, title, updatedAt: new Date() })
 			.where(eq(pasteTable.id, id))
 			.returning();
 		if (!row) throw new PasteNotFoundError(id);

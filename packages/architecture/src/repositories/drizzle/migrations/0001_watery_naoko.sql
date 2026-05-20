@@ -1,0 +1,1 @@
+ALTER TABLE `pastes` ADD `title` text;

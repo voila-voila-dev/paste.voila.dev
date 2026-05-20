@@ -4,6 +4,7 @@ export const pasteTable = sqliteTable("pastes", {
 	id: text("id").primaryKey(),
 	content: text("content").notNull(),
 	editToken: text("edit_token").notNull(),
+	title: text("title"),
 	createdAt: integer("created_at", { mode: "timestamp_ms" })
 		.notNull()
 		.$defaultFn(() => new Date()),
