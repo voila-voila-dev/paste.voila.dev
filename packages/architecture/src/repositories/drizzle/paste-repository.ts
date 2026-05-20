@@ -1,6 +1,6 @@
 import { PasteNotFoundError } from "@paste.voila.dev/domain/errors";
-import type { Paste, PasteRepository } from "@paste.voila.dev/domain/paste";
-import { eq } from "drizzle-orm";
+import type { Paste, PasteRepository, PasteSummary } from "@paste.voila.dev/domain/paste";
+import { desc, eq } from "drizzle-orm";
 import type { Database } from "./client.ts";
 import { pasteTable, type PasteRow } from "./tables/paste-table.ts";
 
@@ -35,6 +35,20 @@ export class DrizzlePasteRepository implements PasteRepository {
 	async findById(id: string): Promise<Paste | null> {
 		const [row] = await this.db.select().from(pasteTable).where(eq(pasteTable.id, id)).limit(1);
 		return row ? toPaste(row) : null;
+	}
+
+	async findRecent(limit: number): Promise<PasteSummary[]> {
+		const rows = await this.db
+			.select({
+				id: pasteTable.id,
+				content: pasteTable.content,
+				createdAt: pasteTable.createdAt,
+				updatedAt: pasteTable.updatedAt,
+			})
+			.from(pasteTable)
+			.orderBy(desc(pasteTable.createdAt))
+			.limit(limit);
+		return rows;
 	}
 
 	async update(id: string, content: string): Promise<Paste> {

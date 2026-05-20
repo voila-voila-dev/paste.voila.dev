@@ -14,5 +14,24 @@
 			"database_id": "118a3c92-053c-4b81-887d-cecec2ef9cb2",
 			"migrations_dir": "../../packages/architecture/src/repositories/drizzle/migrations"
 		}
-	]
+	],
+	"unsafe": {
+		"bindings": [
+			{
+				"name": "CREATE_LIMITER",
+				"type": "ratelimit",
+				"namespace_id": "1001",
+				"simple": { "limit": 5, "period": 60 }
+			},
+			{
+				"name": "UPDATE_LIMITER",
+				"type": "ratelimit",
+				"namespace_id": "1002",
+				"simple": { "limit": 20, "period": 60 }
+			}
+		]
+	},
+	"observability": {
+		"enabled": true
+	}
 }

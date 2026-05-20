@@ -1,6 +1,17 @@
 @import "@paste.voila.dev/ui/styles/globals.css";
+@import "@fontsource-variable/geist-mono";
 @import "highlight.js/styles/github-dark.css";
 @source "./**/*.{ts,tsx}";
+
+@theme {
+	--font-sans: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	--font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+html,
+body {
+	font-family: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
 
 .prose pre {
 	background: transparent !important;

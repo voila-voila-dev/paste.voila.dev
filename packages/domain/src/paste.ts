@@ -31,6 +31,7 @@ export function newPaste(content: string): Paste {
 export interface PasteRepository {
 	create(paste: Paste): Promise<Paste>;
 	findById(id: string): Promise<Paste | null>;
+	findRecent(limit: number): Promise<PasteSummary[]>;
 	update(id: string, content: string): Promise<Paste>;
 	delete(id: string): Promise<void>;
 }
