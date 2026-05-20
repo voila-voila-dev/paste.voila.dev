@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a0a0a"/>
+      <stop offset="1" stop-color="#1a1a1a"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#262626" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#grid)" opacity="0.5"/>
+  <g font-family="ui-monospace, 'Geist Mono', 'SF Mono', Menlo, monospace" fill="#fafafa">
+    <text x="80" y="280" font-size="84" font-weight="600" letter-spacing="-2">paste.voila.dev</text>
+    <text x="80" y="350" font-size="36" font-weight="400" fill="#a3a3a3">markdown pastebin · no auth · no expiry</text>
+    <g transform="translate(80, 470)" font-size="22" fill="#737373">
+      <text>$ curl paste.voila.dev/&lt;id&gt;/raw</text>
+      <text y="36" fill="#525252">edit token in URL fragment — never hits server logs</text>
+    </g>
+  </g>
+  <g transform="translate(1040, 80)" fill="#fafafa">
+    <rect x="0" y="0" width="80" height="80" rx="12" fill="#fafafa"/>
+    <text x="40" y="56" text-anchor="middle" font-family="ui-monospace, monospace" font-size="48" font-weight="700" fill="#0a0a0a">P</text>
+  </g>
+</svg>

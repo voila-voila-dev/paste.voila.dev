@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as IdIndexRouteImport } from './routes/$id.index'
 import { Route as IdRawRouteImport } from './routes/$id.raw'
 import { Route as IdEditRouteImport } from './routes/$id.edit'
 import { Route as IdDownloadRouteImport } from './routes/$id.download'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -43,6 +49,7 @@ const IdDownloadRoute = IdDownloadRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/$id/download': typeof IdDownloadRoute
   '/$id/edit': typeof IdEditRoute
   '/$id/raw': typeof IdRawRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/$id/download': typeof IdDownloadRoute
   '/$id/edit': typeof IdEditRoute
   '/$id/raw': typeof IdRawRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/$id/download': typeof IdDownloadRoute
   '/$id/edit': typeof IdEditRoute
   '/$id/raw': typeof IdRawRoute
@@ -65,14 +74,28 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$id/download' | '/$id/edit' | '/$id/raw' | '/$id/'
+  fullPaths:
+    | '/'
+    | '/sitemap.xml'
+    | '/$id/download'
+    | '/$id/edit'
+    | '/$id/raw'
+    | '/$id/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$id/download' | '/$id/edit' | '/$id/raw' | '/$id'
-  id: '__root__' | '/' | '/$id/download' | '/$id/edit' | '/$id/raw' | '/$id/'
+  to: '/' | '/sitemap.xml' | '/$id/download' | '/$id/edit' | '/$id/raw' | '/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/sitemap.xml'
+    | '/$id/download'
+    | '/$id/edit'
+    | '/$id/raw'
+    | '/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   IdDownloadRoute: typeof IdDownloadRoute
   IdEditRoute: typeof IdEditRoute
   IdRawRoute: typeof IdRawRoute
@@ -81,6 +104,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -121,6 +151,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   IdDownloadRoute: IdDownloadRoute,
   IdEditRoute: IdEditRoute,
   IdRawRoute: IdRawRoute,
@@ -129,12 +160,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

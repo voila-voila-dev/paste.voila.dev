@@ -1,3 +1,7 @@
-# https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /*/edit
+Disallow: /*/raw
+Disallow: /*/download
+
+Sitemap: https://paste.voila.dev/sitemap.xml

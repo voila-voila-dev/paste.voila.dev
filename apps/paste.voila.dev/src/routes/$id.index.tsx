@@ -1,6 +1,7 @@
 import { Button } from "@paste.voila.dev/ui/components/button";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { renderMarkdown } from "../lib/markdown.ts";
+import { excerpt, OG_IMAGE_URL, SITE_NAME, SITE_URL } from "../lib/seo.ts";
 import { getPaste } from "../server/pastes.ts";
 
 export const Route = createFileRoute("/$id/")({
@@ -12,14 +13,62 @@ export const Route = createFileRoute("/$id/")({
 			title: paste.title,
 			content: paste.content,
 			html,
+			visibility: paste.visibility,
+			createdAt: paste.createdAt,
 			updatedAt: paste.updatedAt,
 		};
 	},
-	head: ({ loaderData }) => ({
-		meta: [
-			{ title: loaderData?.title ?? `paste · ${loaderData?.id.slice(0, 8) ?? ""}` },
-		],
-	}),
+	head: ({ loaderData }) => {
+		if (!loaderData) return { meta: [] };
+		const shortId = loaderData.id.slice(0, 8);
+		const title = loaderData.title
+			? `${loaderData.title} · ${SITE_NAME}`
+			: `Paste ${shortId} · ${SITE_NAME}`;
+		const description =
+			excerpt(loaderData.content) || `Markdown paste on ${SITE_NAME}.`;
+		const url = `${SITE_URL}/${loaderData.id}`;
+		const isUnlisted = loaderData.visibility === "unlisted";
+		const robots = isUnlisted
+			? "noindex, nofollow"
+			: "index, follow, max-image-preview:large";
+		const jsonLd = {
+			"@context": "https://schema.org",
+			"@type": "Article",
+			headline: loaderData.title ?? `Paste ${shortId}`,
+			description,
+			url,
+			datePublished: new Date(loaderData.createdAt).toISOString(),
+			dateModified: new Date(loaderData.updatedAt).toISOString(),
+			publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+		};
+		return {
+			meta: [
+				{ title },
+				{ name: "description", content: description },
+				{ name: "robots", content: robots },
+				{ property: "og:type", content: "article" },
+				{ property: "og:title", content: title },
+				{ property: "og:description", content: description },
+				{ property: "og:url", content: url },
+				{ property: "og:image", content: OG_IMAGE_URL },
+				{
+					property: "article:published_time",
+					content: new Date(loaderData.createdAt).toISOString(),
+				},
+				{
+					property: "article:modified_time",
+					content: new Date(loaderData.updatedAt).toISOString(),
+				},
+				{ name: "twitter:title", content: title },
+				{ name: "twitter:description", content: description },
+				{ name: "twitter:image", content: OG_IMAGE_URL },
+			],
+			links: isUnlisted ? [] : [{ rel: "canonical", href: url }],
+			scripts: isUnlisted
+				? []
+				: [{ type: "application/ld+json", children: JSON.stringify(jsonLd) }],
+		};
+	},
 	component: ViewPaste,
 });
 
