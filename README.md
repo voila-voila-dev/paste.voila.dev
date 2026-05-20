@@ -8,11 +8,13 @@ A tiny, fast, open-source pastebin for sharing Markdown. UUIDv7 ids, edit tokens
 
 [**Live demo →**](https://paste.voila.dev)
 
+[![Release](https://img.shields.io/github/v/release/voila-voila-dev/paste.voila.dev?label=release&color=22c55e)](https://github.com/voila-voila-dev/paste.voila.dev/releases)
 [![Deploy](https://img.shields.io/badge/deploy-Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com/)
 [![Stack](https://img.shields.io/badge/stack-TanStack%20Start-EF4444?logo=react&logoColor=white)](https://tanstack.com/start)
 [![Storage](https://img.shields.io/badge/storage-D1-F38020?logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/d1/)
 [![Runtime](https://img.shields.io/badge/runtime-Bun-000000?logo=bun&logoColor=white)](https://bun.sh)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://www.conventionalcommits.org/)
 
 </div>
 
@@ -177,6 +179,31 @@ Contributions are welcome. To keep the project small and focused:
 2. Run `bun run check` before pushing.
 3. Don't introduce new top-level dependencies without a strong reason — every kilobyte ships to the edge.
 4. Keep the domain package framework-agnostic.
+5. Use [Conventional Commits](https://www.conventionalcommits.org/) — they drive the changelog.
+
+### Conventional Commits
+
+Commits on `main` follow Conventional Commits. The supported prefixes:
+
+| Prefix     | When to use                                                 | Bumps     |
+| ---------- | ----------------------------------------------------------- | --------- |
+| `feat:`    | New user-visible functionality                              | **minor** |
+| `fix:`     | Bug fix                                                     | **patch** |
+| `perf:`    | Performance improvement                                     | **patch** |
+| `refactor:`| Internal change, no behavior difference                     | none      |
+| `docs:`    | README / docs only                                          | none      |
+| `build:`   | Build system, deps, Wrangler config                         | none      |
+| `ci:`      | GitHub Actions                                              | none      |
+| `chore:`   | Misc (won't appear in changelog)                            | none      |
+| `test:`    | Tests only                                                  | none      |
+
+Add `!` for a breaking change (`feat!: drop /raw endpoint`) or include `BREAKING CHANGE:` in the body — that triggers a **major** bump.
+
+### How releases happen
+
+[release-please](https://github.com/googleapis/release-please) watches `main`. When it sees commits that warrant a release, it opens (or updates) a "release PR" with the version bump and a generated `CHANGELOG.md` entry. Merge the PR — release-please tags `vX.Y.Z`, creates a GitHub release, and the regular deploy workflow ships it.
+
+That's it: no manual versioning, no manual changelog.
 
 ## Acknowledgements
 
