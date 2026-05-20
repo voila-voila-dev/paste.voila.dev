@@ -25,6 +25,7 @@
     "@phosphor-icons/react": "catalog:react",
     "@tailwindcss/vite": "catalog:tailwind",
     "@tanstack/react-devtools": "latest",
+    "@tanstack/react-form": "^1.32.0",
     "@tanstack/react-router": "latest",
     "@tanstack/react-router-devtools": "latest",
     "@tanstack/react-start": "latest",

@@ -5,6 +5,9 @@ export const pasteTable = sqliteTable("pastes", {
 	content: text("content").notNull(),
 	editToken: text("edit_token").notNull(),
 	title: text("title"),
+	visibility: text("visibility", { enum: ["public", "unlisted"] })
+		.notNull()
+		.default("public"),
 	createdAt: integer("created_at", { mode: "timestamp_ms" })
 		.notNull()
 		.$defaultFn(() => new Date()),

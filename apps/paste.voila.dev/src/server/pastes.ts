@@ -12,10 +12,12 @@ import { z } from "zod";
 import { getPasteRepository } from "./db.ts";
 
 const titleField = z.string().max(MAX_TITLE_LENGTH).optional().nullable();
+const visibilityField = z.enum(["public", "unlisted"]).optional().default("public");
 
 const createInput = z.object({
 	content: z.string().min(1).max(MAX_PASTE_SIZE),
 	title: titleField,
+	visibility: visibilityField,
 });
 
 const updateInput = z.object({
@@ -23,6 +25,7 @@ const updateInput = z.object({
 	editToken: z.string(),
 	content: z.string().min(1).max(MAX_PASTE_SIZE),
 	title: titleField,
+	visibility: visibilityField,
 });
 
 const deleteInput = z.object({
@@ -66,7 +69,7 @@ export const createPaste = createServerFn({ method: "POST" })
 		if (data.content.length > MAX_PASTE_SIZE) {
 			throw new PasteTooLargeError(data.content.length, MAX_PASTE_SIZE);
 		}
-		const paste = newPaste(data.content, data.title);
+		const paste = newPaste(data.content, { title: data.title, visibility: data.visibility });
 		return getPasteRepository().create(paste);
 	});
 
@@ -88,7 +91,11 @@ export const updatePaste = createServerFn({ method: "POST" })
 		if (existing.editToken !== data.editToken) {
 			throw new Error("Invalid edit token");
 		}
-		return repo.update(data.id, data.content, normalizeTitle(data.title));
+		return repo.update(data.id, {
+			content: data.content,
+			title: normalizeTitle(data.title),
+			visibility: data.visibility,
+		});
 	});
 
 export const deletePaste = createServerFn({ method: "POST" })

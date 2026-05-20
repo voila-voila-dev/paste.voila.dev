@@ -1,0 +1,1 @@
+ALTER TABLE `pastes` ADD `visibility` text DEFAULT 'public' NOT NULL;

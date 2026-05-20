@@ -1,79 +1,117 @@
+import type { Visibility } from "@paste.voila.dev/domain/paste";
 import { Button } from "@paste.voila.dev/ui/components/button";
 import { Input } from "@paste.voila.dev/ui/components/input";
 import { Textarea } from "@paste.voila.dev/ui/components/textarea";
+import { useForm } from "@tanstack/react-form";
 import { useRouter } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { detectH1, extractTitle } from "../../lib/format.ts";
 import { rememberPaste } from "../../lib/local-pastes.ts";
 import { createPaste } from "../../server/pastes.ts";
+import { VisibilityToggle } from "./visibility-toggle.tsx";
+
+type FormValues = {
+	title: string;
+	content: string;
+	visibility: Visibility;
+};
 
 export function NewPasteForm() {
 	const router = useRouter();
-	const [content, setContent] = useState("");
-	const [title, setTitle] = useState("");
 	const titleEditedManually = useRef(false);
-	const [pending, setPending] = useState(false);
-	const [error, setError] = useState<string | null>(null);
 
-	function onContentChange(value: string) {
-		setContent(value);
-		if (!titleEditedManually.current) {
-			setTitle(detectH1(value) ?? "");
-		}
-	}
-
-	function onTitleChange(value: string) {
-		titleEditedManually.current = true;
-		setTitle(value);
-	}
-
-	async function onSubmit(e: React.FormEvent) {
-		e.preventDefault();
-		if (!content.trim()) return;
-		setPending(true);
-		setError(null);
-		try {
-			const paste = await createPaste({ data: { content, title: title || null } });
+	const initial: FormValues = { title: "", content: "", visibility: "public" };
+	const form = useForm({
+		defaultValues: initial,
+		onSubmit: async ({ value, formApi }) => {
+			const paste = await createPaste({
+				data: {
+					content: value.content,
+					title: value.title || null,
+					visibility: value.visibility,
+				},
+			});
 			rememberPaste({
 				id: paste.id,
 				editToken: paste.editToken,
 				title: paste.title ?? extractTitle(paste.content),
 				createdAt: new Date(paste.createdAt).toISOString(),
 			});
+			formApi.reset();
 			router.navigate({
 				to: "/$id/edit",
 				params: { id: paste.id },
 				hash: `tk=${paste.editToken}`,
 			});
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Failed to create paste");
-			setPending(false);
-		}
-	}
+		},
+	});
 
 	return (
-		<form onSubmit={onSubmit} className="space-y-3">
-			<Input
-				value={title}
-				onChange={(e) => onTitleChange(e.target.value)}
-				placeholder="Title (optional)"
-				maxLength={120}
-			/>
-			<Textarea
-				value={content}
-				onChange={(e) => onContentChange(e.target.value)}
-				placeholder="# Paste your markdown here..."
-				className="min-h-[40vh] font-mono text-sm"
-				autoFocus
-			/>
-			<div className="flex items-center justify-between">
-				<span className="text-xs text-muted-foreground">
-					{error ?? `${content.length} chars`}
-				</span>
-				<Button type="submit" disabled={pending || !content.trim()}>
-					{pending ? "Creating…" : "Create paste"}
-				</Button>
-			</div>
+		<form
+			onSubmit={(e) => {
+				e.preventDefault();
+				void form.handleSubmit();
+			}}
+			className="space-y-3"
+		>
+			<form.Field name="title">
+				{(field) => (
+					<Input
+						value={field.state.value}
+						onChange={(e) => {
+							titleEditedManually.current = true;
+							field.handleChange(e.target.value);
+						}}
+						placeholder="Title (optional)"
+						maxLength={120}
+					/>
+				)}
+			</form.Field>
+
+			<form.Field name="content">
+				{(field) => (
+					<Textarea
+						value={field.state.value}
+						onChange={(e) => {
+							field.handleChange(e.target.value);
+							if (!titleEditedManually.current) {
+								form.setFieldValue("title", detectH1(e.target.value) ?? "");
+							}
+						}}
+						placeholder="# Paste your markdown here..."
+						className="min-h-[40vh] font-mono text-sm"
+						autoFocus
+					/>
+				)}
+			</form.Field>
+
+			<form.Subscribe
+				selector={(state) => [state.values.content, state.isSubmitting, state.errorMap] as const}
+			>
+				{([content, isSubmitting, errorMap]) => {
+					const errorEntries = Object.values(errorMap).filter(Boolean);
+					return (
+						<div className="flex items-center justify-between gap-4">
+							<div className="flex items-center gap-3 text-xs text-muted-foreground">
+								<span>
+									{errorEntries.length > 0 ? String(errorEntries[0]) : `${content.length} chars`}
+								</span>
+								<form.Field name="visibility">
+									{(field) => (
+										<VisibilityToggle
+											value={field.state.value}
+											onChange={field.handleChange}
+										/>
+									)}
+								</form.Field>
+							</div>
+							<Button type="submit" disabled={isSubmitting || !content.trim()}>
+								{isSubmitting ? "Creating…" : "Create paste"}
+							</Button>
+						</div>
+					);
+				}}
+			</form.Subscribe>
 		</form>
 	);
 }

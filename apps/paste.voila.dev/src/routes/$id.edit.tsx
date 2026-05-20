@@ -1,20 +1,34 @@
+import type { Visibility } from "@paste.voila.dev/domain/paste";
 import { Button } from "@paste.voila.dev/ui/components/button";
 import { Input } from "@paste.voila.dev/ui/components/input";
 import { Textarea } from "@paste.voila.dev/ui/components/textarea";
+import { useForm } from "@tanstack/react-form";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { renderMarkdown } from "../lib/markdown.ts";
 import { forgetPaste, rememberPaste } from "../lib/local-pastes.ts";
+import { VisibilityToggle } from "./-home/visibility-toggle.tsx";
 import { deletePaste, getPaste, updatePaste } from "../server/pastes.ts";
 
 export const Route = createFileRoute("/$id/edit")({
 	loader: async ({ params }) => {
 		const paste = await getPaste({ data: { id: params.id } });
-		return { id: paste.id, content: paste.content, title: paste.title };
+		return {
+			id: paste.id,
+			content: paste.content,
+			title: paste.title,
+			visibility: paste.visibility,
+		};
 	},
 	head: ({ params }) => ({ meta: [{ title: `edit · ${params.id.slice(0, 8)}` }] }),
 	component: EditPaste,
 });
+
+type FormValues = {
+	content: string;
+	title: string;
+	visibility: Visibility;
+};
 
 function readTokenFromHash(): string {
 	if (typeof window === "undefined") return "";
@@ -32,9 +46,7 @@ function extractFirstLine(content: string): string {
 
 function EditPaste() {
 	const router = useRouter();
-	const { id, content: initial, title: initialTitle } = Route.useLoaderData();
-	const [content, setContent] = useState(initial);
-	const [title, setTitle] = useState(initialTitle ?? "");
+	const data = Route.useLoaderData();
 	const [token, setToken] = useState("");
 	const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 	const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -44,38 +56,46 @@ function EditPaste() {
 		setToken(readTokenFromHash());
 	}, []);
 
-	const html = useMemo(() => renderMarkdown(content), [content]);
-
-	const viewUrl = typeof window !== "undefined" ? `${window.location.origin}/${id}` : `/${id}`;
-	const editUrl = `${viewUrl}/edit#tk=${token}`;
-
-	async function save() {
-		if (!token) {
-			setStatus("error");
-			return;
-		}
-		setStatus("saving");
-		try {
-			const saved = await updatePaste({
-				data: { id, editToken: token, content, title: title || null },
-			});
-			rememberPaste({
-				id: saved.id,
-				editToken: token,
-				title: saved.title ?? extractFirstLine(saved.content),
-				createdAt: new Date(saved.createdAt).toISOString(),
-			});
-			setStatus("saved");
-		} catch {
-			setStatus("error");
-		}
-	}
+	const form = useForm({
+		defaultValues: {
+			content: data.content,
+			title: data.title ?? "",
+			visibility: data.visibility,
+		} satisfies FormValues,
+		onSubmit: async ({ value }) => {
+			if (!token) {
+				setStatus("error");
+				return;
+			}
+			setStatus("saving");
+			try {
+				const saved = await updatePaste({
+					data: {
+						id: data.id,
+						editToken: token,
+						content: value.content,
+						title: value.title || null,
+						visibility: value.visibility,
+					},
+				});
+				rememberPaste({
+					id: saved.id,
+					editToken: token,
+					title: saved.title ?? extractFirstLine(saved.content),
+					createdAt: new Date(saved.createdAt).toISOString(),
+				});
+				setStatus("saved");
+			} catch {
+				setStatus("error");
+			}
+		},
+	});
 
 	async function doDelete() {
 		if (!token) return;
 		try {
-			await deletePaste({ data: { id, editToken: token } });
-			forgetPaste(id);
+			await deletePaste({ data: { id: data.id, editToken: token } });
+			forgetPaste(data.id);
 			router.navigate({ to: "/" });
 		} catch {
 			setStatus("error");
@@ -86,42 +106,60 @@ function EditPaste() {
 		function onKey(e: KeyboardEvent) {
 			if ((e.metaKey || e.ctrlKey) && e.key === "s") {
 				e.preventDefault();
-				void save();
+				void form.handleSubmit();
 			}
 		}
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
 	});
 
+	const viewUrl =
+		typeof window !== "undefined" ? `${window.location.origin}/${data.id}` : `/${data.id}`;
+	const editUrl = `${viewUrl}/edit#tk=${token}`;
+
 	return (
-		<div className="flex h-screen flex-col">
+		<form
+			onSubmit={(e) => {
+				e.preventDefault();
+				void form.handleSubmit();
+			}}
+			className="flex h-screen flex-col"
+		>
 			<header className="flex items-center justify-between border-b px-4 py-2">
 				<div className="flex items-center gap-4">
 					<Link to="/" className="text-sm font-semibold hover:underline">
 						← paste.voila.dev
 					</Link>
-					<span className="text-xs text-muted-foreground">editing {id.slice(0, 8)}</span>
+					<span className="text-xs text-muted-foreground">editing {data.id.slice(0, 8)}</span>
 				</div>
 				<div className="flex items-center gap-2">
-					<span className="text-xs text-muted-foreground">
-						{status === "saved" && "saved"}
-						{status === "saving" && "saving…"}
-						{status === "error" && !token && "missing edit token"}
-						{status === "error" && token && "operation failed"}
-					</span>
-					<Button size="sm" variant="ghost" onClick={() => setShowShare((s) => !s)}>
+					<form.Subscribe selector={(s) => s.isSubmitting}>
+						{(isSubmitting) => (
+							<span className="text-xs text-muted-foreground">
+								{isSubmitting && "saving…"}
+								{!isSubmitting && status === "saved" && "saved"}
+								{!isSubmitting && status === "error" && !token && "missing edit token"}
+								{!isSubmitting && status === "error" && token && "operation failed"}
+							</span>
+						)}
+					</form.Subscribe>
+					<Button type="button" size="sm" variant="ghost" onClick={() => setShowShare((s) => !s)}>
 						Share
 					</Button>
 					<Link
 						to="/$id"
-						params={{ id }}
+						params={{ id: data.id }}
 						className="inline-flex h-8 items-center rounded-md px-3 text-xs font-medium hover:bg-accent"
 					>
 						View
 					</Link>
-					<Button size="sm" onClick={save} disabled={!token || status === "saving"}>
-						Save
-					</Button>
+					<form.Subscribe selector={(s) => s.isSubmitting}>
+						{(isSubmitting) => (
+							<Button type="submit" size="sm" disabled={!token || isSubmitting}>
+								Save
+							</Button>
+						)}
+					</form.Subscribe>
 				</div>
 			</header>
 
@@ -136,27 +174,44 @@ function EditPaste() {
 				</div>
 			)}
 
-			<div className="border-b bg-background px-4 py-2">
-				<Input
-					value={title}
-					onChange={(e) => setTitle(e.target.value)}
-					placeholder="Title (optional)"
-					maxLength={120}
-					className="h-8 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
-				/>
+			<div className="flex items-center gap-3 border-b bg-background px-4 py-2">
+				<form.Field name="title">
+					{(field) => (
+						<Input
+							value={field.state.value}
+							onChange={(e) => field.handleChange(e.target.value)}
+							placeholder="Title (optional)"
+							maxLength={120}
+							className="h-8 flex-1 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+						/>
+					)}
+				</form.Field>
+				<form.Field name="visibility">
+					{(field) => (
+						<VisibilityToggle value={field.state.value} onChange={field.handleChange} />
+					)}
+				</form.Field>
 			</div>
 
 			<div className="grid flex-1 grid-cols-2 overflow-hidden">
-				<Textarea
-					value={content}
-					onChange={(e) => setContent(e.target.value)}
-					className="h-full resize-none rounded-none border-0 border-r font-mono text-sm focus-visible:ring-0"
-				/>
-				<article
-					className="prose prose-neutral dark:prose-invert max-w-none overflow-auto p-6"
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized
-					dangerouslySetInnerHTML={{ __html: html }}
-				/>
+				<form.Field name="content">
+					{(field) => (
+						<Textarea
+							value={field.state.value}
+							onChange={(e) => field.handleChange(e.target.value)}
+							className="h-full resize-none rounded-none border-0 border-r font-mono text-sm focus-visible:ring-0"
+						/>
+					)}
+				</form.Field>
+				<form.Subscribe selector={(s) => s.values.content}>
+					{(content) => (
+						<article
+							className="prose prose-neutral dark:prose-invert max-w-none overflow-auto p-6"
+							// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized
+							dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+						/>
+					)}
+				</form.Subscribe>
 			</div>
 
 			<footer className="flex items-center justify-between border-t px-4 py-2 text-xs text-muted-foreground">
@@ -164,15 +219,27 @@ function EditPaste() {
 				{confirmingDelete ? (
 					<div className="flex items-center gap-2">
 						<span>Delete this paste?</span>
-						<Button size="sm" variant="ghost" onClick={() => setConfirmingDelete(false)}>
+						<Button
+							type="button"
+							size="sm"
+							variant="ghost"
+							onClick={() => setConfirmingDelete(false)}
+						>
 							Cancel
 						</Button>
-						<Button size="sm" variant="destructive" onClick={doDelete} disabled={!token}>
+						<Button
+							type="button"
+							size="sm"
+							variant="destructive"
+							onClick={doDelete}
+							disabled={!token}
+						>
 							Delete forever
 						</Button>
 					</div>
 				) : (
 					<Button
+						type="button"
 						size="sm"
 						variant="ghost"
 						onClick={() => setConfirmingDelete(true)}
@@ -182,7 +249,7 @@ function EditPaste() {
 					</Button>
 				)}
 			</footer>
-		</div>
+		</form>
 	);
 }
 
@@ -201,7 +268,7 @@ function ShareRow({ label, url, muted }: { label: string; url: string; muted?: b
 			>
 				{url}
 			</code>
-			<Button size="sm" variant="ghost" onClick={copy}>
+			<Button type="button" size="sm" variant="ghost" onClick={copy}>
 				{copied ? "Copied" : "Copy"}
 			</Button>
 		</div>

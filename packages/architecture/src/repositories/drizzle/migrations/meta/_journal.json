@@ -15,6 +15,13 @@
       "when": 1779279483896,
       "tag": "0001_watery_naoko",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1779282651632,
+      "tag": "0002_many_frightful_four",
+      "breakpoints": true
     }
   ]
 }
