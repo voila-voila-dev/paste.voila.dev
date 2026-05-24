@@ -12,9 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as IdIndexRouteImport } from './routes/$id.index'
+import { Route as ApiPastesRouteImport } from './routes/api.pastes'
 import { Route as IdRawRouteImport } from './routes/$id.raw'
 import { Route as IdEditRouteImport } from './routes/$id.edit'
 import { Route as IdDownloadRouteImport } from './routes/$id.download'
+import { Route as ApiPastesIdRouteImport } from './routes/api.pastes.$id'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -29,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
 const IdIndexRoute = IdIndexRouteImport.update({
   id: '/$id/',
   path: '/$id/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPastesRoute = ApiPastesRouteImport.update({
+  id: '/api/pastes',
+  path: '/api/pastes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IdRawRoute = IdRawRouteImport.update({
@@ -46,6 +53,11 @@ const IdDownloadRoute = IdDownloadRouteImport.update({
   path: '/$id/download',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPastesIdRoute = ApiPastesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiPastesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,7 +65,9 @@ export interface FileRoutesByFullPath {
   '/$id/download': typeof IdDownloadRoute
   '/$id/edit': typeof IdEditRoute
   '/$id/raw': typeof IdRawRoute
+  '/api/pastes': typeof ApiPastesRouteWithChildren
   '/$id/': typeof IdIndexRoute
+  '/api/pastes/$id': typeof ApiPastesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -61,7 +75,9 @@ export interface FileRoutesByTo {
   '/$id/download': typeof IdDownloadRoute
   '/$id/edit': typeof IdEditRoute
   '/$id/raw': typeof IdRawRoute
+  '/api/pastes': typeof ApiPastesRouteWithChildren
   '/$id': typeof IdIndexRoute
+  '/api/pastes/$id': typeof ApiPastesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -70,7 +86,9 @@ export interface FileRoutesById {
   '/$id/download': typeof IdDownloadRoute
   '/$id/edit': typeof IdEditRoute
   '/$id/raw': typeof IdRawRoute
+  '/api/pastes': typeof ApiPastesRouteWithChildren
   '/$id/': typeof IdIndexRoute
+  '/api/pastes/$id': typeof ApiPastesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -80,9 +98,19 @@ export interface FileRouteTypes {
     | '/$id/download'
     | '/$id/edit'
     | '/$id/raw'
+    | '/api/pastes'
     | '/$id/'
+    | '/api/pastes/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sitemap.xml' | '/$id/download' | '/$id/edit' | '/$id/raw' | '/$id'
+  to:
+    | '/'
+    | '/sitemap.xml'
+    | '/$id/download'
+    | '/$id/edit'
+    | '/$id/raw'
+    | '/api/pastes'
+    | '/$id'
+    | '/api/pastes/$id'
   id:
     | '__root__'
     | '/'
@@ -90,7 +118,9 @@ export interface FileRouteTypes {
     | '/$id/download'
     | '/$id/edit'
     | '/$id/raw'
+    | '/api/pastes'
     | '/$id/'
+    | '/api/pastes/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -99,6 +129,7 @@ export interface RootRouteChildren {
   IdDownloadRoute: typeof IdDownloadRoute
   IdEditRoute: typeof IdEditRoute
   IdRawRoute: typeof IdRawRoute
+  ApiPastesRoute: typeof ApiPastesRouteWithChildren
   IdIndexRoute: typeof IdIndexRoute
 }
 
@@ -125,6 +156,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/pastes': {
+      id: '/api/pastes'
+      path: '/api/pastes'
+      fullPath: '/api/pastes'
+      preLoaderRoute: typeof ApiPastesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$id/raw': {
       id: '/$id/raw'
       path: '/$id/raw'
@@ -146,8 +184,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IdDownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/pastes/$id': {
+      id: '/api/pastes/$id'
+      path: '/$id'
+      fullPath: '/api/pastes/$id'
+      preLoaderRoute: typeof ApiPastesIdRouteImport
+      parentRoute: typeof ApiPastesRoute
+    }
   }
 }
+
+interface ApiPastesRouteChildren {
+  ApiPastesIdRoute: typeof ApiPastesIdRoute
+}
+
+const ApiPastesRouteChildren: ApiPastesRouteChildren = {
+  ApiPastesIdRoute: ApiPastesIdRoute,
+}
+
+const ApiPastesRouteWithChildren = ApiPastesRoute._addFileChildren(
+  ApiPastesRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -155,8 +212,18 @@ const rootRouteChildren: RootRouteChildren = {
   IdDownloadRoute: IdDownloadRoute,
   IdEditRoute: IdEditRoute,
   IdRawRoute: IdRawRoute,
+  ApiPastesRoute: ApiPastesRouteWithChildren,
   IdIndexRoute: IdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
