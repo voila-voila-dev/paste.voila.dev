@@ -112,7 +112,12 @@ describe("POST /api/pastes", () => {
 	test("rejects duplicate paths", async () => {
 		const repo = new InMemoryPasteRepository();
 		const res = await handleCreatePaste(
-			postRequest({ files: [{ path: "a.md", content: "1" }, { path: "a.md", content: "2" }] }),
+			postRequest({
+				files: [
+					{ path: "a.md", content: "1" },
+					{ path: "a.md", content: "2" },
+				],
+			}),
 			{ repo, limiter: allow },
 		);
 		expect(res.status).toBe(400);

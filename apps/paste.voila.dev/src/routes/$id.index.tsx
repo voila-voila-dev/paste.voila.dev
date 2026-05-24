@@ -13,10 +13,8 @@ export const Route = createFileRoute("/$id/")({
 	loader: async ({ params, deps }) => {
 		const paste = await getPaste({ data: { id: params.id } });
 		const paths = paste.files.map((file) => file.path);
-		const activePath =
-			deps.f && paths.includes(deps.f) ? deps.f : paste.entryPath;
-		const active =
-			paste.files.find((file) => file.path === activePath) ?? paste.files[0];
+		const activePath = deps.f && paths.includes(deps.f) ? deps.f : paste.entryPath;
+		const active = paste.files.find((file) => file.path === activePath) ?? paste.files[0];
 		const html = renderMarkdown(active?.content ?? "", {
 			pasteId: paste.id,
 			currentPath: activePath,
@@ -41,13 +39,10 @@ export const Route = createFileRoute("/$id/")({
 		const title = loaderData.title
 			? `${loaderData.title} · ${SITE_NAME}`
 			: `Paste ${shortId} · ${SITE_NAME}`;
-		const description =
-			excerpt(loaderData.content) || `Markdown paste on ${SITE_NAME}.`;
+		const description = excerpt(loaderData.content) || `Markdown paste on ${SITE_NAME}.`;
 		const url = `${SITE_URL}/${loaderData.id}`;
 		const isUnlisted = loaderData.visibility === "unlisted";
-		const robots = isUnlisted
-			? "noindex, nofollow"
-			: "index, follow, max-image-preview:large";
+		const robots = isUnlisted ? "noindex, nofollow" : "index, follow, max-image-preview:large";
 		const jsonLd = {
 			"@context": "https://schema.org",
 			"@type": "Article",
@@ -90,12 +85,10 @@ export const Route = createFileRoute("/$id/")({
 });
 
 function ViewPaste() {
-	const { id, title, html, paths, activePath, entryPath, updatedAt } =
-		Route.useLoaderData();
+	const { id, title, html, paths, activePath, entryPath, updatedAt } = Route.useLoaderData();
 	const navigate = Route.useNavigate();
 	const multiFile = paths.length > 1;
-	const fileSuffix =
-		activePath === entryPath ? "" : `?f=${encodeURIComponent(activePath)}`;
+	const fileSuffix = activePath === entryPath ? "" : `?f=${encodeURIComponent(activePath)}`;
 
 	async function copyLink() {
 		await navigator.clipboard.writeText(window.location.href);
@@ -160,13 +153,10 @@ function ViewPaste() {
 				)}
 				<div className="min-w-0 flex-1">
 					{multiFile && (
-						<p className="mb-3 font-mono text-xs text-muted-foreground">
-							{activePath}
-						</p>
+						<p className="mb-3 font-mono text-xs text-muted-foreground">{activePath}</p>
 					)}
 					<article
 						className="prose prose-neutral dark:prose-invert max-w-none"
-						// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized
 						dangerouslySetInnerHTML={{ __html: html }}
 					/>
 				</div>

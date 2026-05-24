@@ -34,9 +34,7 @@ export function PasteEditor({
 	const [activePath, setActivePath] = useState(initial.entryPath);
 	const [title, setTitle] = useState(initial.title);
 	const [visibility, setVisibility] = useState<Visibility>(initial.visibility);
-	const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">(
-		"idle",
-	);
+	const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 	const [error, setError] = useState<string | null>(null);
 	const [newPath, setNewPath] = useState("");
 	const [renaming, setRenaming] = useState(false);
@@ -47,9 +45,7 @@ export function PasteEditor({
 	const active = files.find((f) => f.path === activePath) ?? files[0];
 
 	function updateActiveContent(content: string) {
-		setFiles((prev) =>
-			prev.map((f) => (f.path === activePath ? { ...f, content } : f)),
-		);
+		setFiles((prev) => prev.map((f) => (f.path === activePath ? { ...f, content } : f)));
 		if (activePath === entryPath && !titleEdited.current) {
 			setTitle(detectH1(content) ?? "");
 		}
@@ -59,8 +55,7 @@ export function PasteEditor({
 	function addFile() {
 		const p = normalizePath(newPath);
 		if (!isValidPath(p)) return setError("Invalid file path");
-		if (paths.includes(p))
-			return setError("A file with that path already exists");
+		if (paths.includes(p)) return setError("A file with that path already exists");
 		setFiles((prev) => [...prev, { path: p, content: "" }]);
 		setActivePath(p);
 		setNewPath("");
@@ -81,9 +76,7 @@ export function PasteEditor({
 		if (p !== activePath && paths.includes(p)) {
 			return setError("A file with that path already exists");
 		}
-		setFiles((prev) =>
-			prev.map((f) => (f.path === activePath ? { ...f, path: p } : f)),
-		);
+		setFiles((prev) => prev.map((f) => (f.path === activePath ? { ...f, path: p } : f)));
 		if (entryPath === activePath) setEntryPath(p);
 		setActivePath(p);
 		setRenaming(false);
@@ -156,12 +149,7 @@ export function PasteEditor({
 					{status === "saved" && "saved"}
 					{status === "error" && (error ?? "failed")}
 				</span>
-				<Button
-					type="button"
-					size="sm"
-					onClick={save}
-					disabled={status === "saving"}
-				>
+				<Button type="button" size="sm" onClick={save} disabled={status === "saving"}>
 					{mode === "create" ? "Create paste" : "Save"}
 				</Button>
 			</div>
@@ -248,10 +236,7 @@ export function PasteEditor({
 								disabled={activePath === entryPath}
 								title="Set as home file"
 							>
-								<Star
-									weight={activePath === entryPath ? "fill" : "regular"}
-									className="size-3.5"
-								/>
+								<Star weight={activePath === entryPath ? "fill" : "regular"} className="size-3.5" />
 								{activePath === entryPath ? "Home" : "Set home"}
 							</Button>
 							<Button
@@ -279,7 +264,6 @@ export function PasteEditor({
 						<article
 							onClick={onPreviewClick}
 							className="prose prose-neutral dark:prose-invert max-w-none overflow-auto p-6"
-							// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized
 							dangerouslySetInnerHTML={{ __html: previewHtml }}
 						/>
 					</div>

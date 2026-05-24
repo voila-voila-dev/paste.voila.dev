@@ -3,15 +3,24 @@ import { defaultEntryPath, entryContent, newPaste, toSummary } from "./paste.ts"
 
 describe("defaultEntryPath", () => {
 	test("prefers index.md, then README.md, else first file", () => {
-		expect(defaultEntryPath([{ path: "a.md", content: "" }, { path: "index.md", content: "" }])).toBe(
-			"index.md",
-		);
 		expect(
-			defaultEntryPath([{ path: "a.md", content: "" }, { path: "README.md", content: "" }]),
+			defaultEntryPath([
+				{ path: "a.md", content: "" },
+				{ path: "index.md", content: "" },
+			]),
+		).toBe("index.md");
+		expect(
+			defaultEntryPath([
+				{ path: "a.md", content: "" },
+				{ path: "README.md", content: "" },
+			]),
 		).toBe("README.md");
-		expect(defaultEntryPath([{ path: "first.md", content: "" }, { path: "z.md", content: "" }])).toBe(
-			"first.md",
-		);
+		expect(
+			defaultEntryPath([
+				{ path: "first.md", content: "" },
+				{ path: "z.md", content: "" },
+			]),
+		).toBe("first.md");
 	});
 });
 

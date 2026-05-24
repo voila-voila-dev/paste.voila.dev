@@ -1,8 +1,4 @@
-import {
-	File as FileIcon,
-	Folder as FolderIcon,
-	Star,
-} from "@phosphor-icons/react";
+import { File as FileIcon, Folder as FolderIcon, Star } from "@phosphor-icons/react";
 
 type TreeNode = {
 	name: string;
@@ -12,9 +8,7 @@ type TreeNode = {
 };
 
 function sortNodes(nodes: TreeNode[]): void {
-	nodes.sort((a, b) =>
-		a.isFile === b.isFile ? a.name.localeCompare(b.name) : a.isFile ? 1 : -1,
-	);
+	nodes.sort((a, b) => (a.isFile === b.isFile ? a.name.localeCompare(b.name) : a.isFile ? 1 : -1));
 	for (const n of nodes) sortNodes(n.children);
 }
 
@@ -85,10 +79,7 @@ function TreeRow({
 	if (!node.isFile) {
 		return (
 			<li>
-				<div
-					style={pad}
-					className="flex items-center gap-1.5 py-1 pr-2 text-muted-foreground"
-				>
+				<div style={pad} className="flex items-center gap-1.5 py-1 pr-2 text-muted-foreground">
 					<FolderIcon className="size-3.5 shrink-0" />
 					<span className="truncate">{node.name}</span>
 				</div>
@@ -122,10 +113,7 @@ function TreeRow({
 				<FileIcon className="size-3.5 shrink-0" />
 				<span className="truncate">{node.name}</span>
 				{node.path === entryPath && (
-					<Star
-						weight="fill"
-						className="ml-auto size-3 shrink-0 text-amber-500"
-					/>
+					<Star weight="fill" className="ml-auto size-3 shrink-0 text-amber-500" />
 				)}
 			</button>
 		</li>

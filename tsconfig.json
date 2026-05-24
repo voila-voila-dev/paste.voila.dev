@@ -11,6 +11,8 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
     "allowJs": false,
     "jsx": "preserve",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],

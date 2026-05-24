@@ -8,9 +8,7 @@ export function SectionHeader({ title, trailing }: { title: string; trailing?: R
 	return (
 		<div className="mb-3 flex items-baseline justify-between">
 			<h2 className="text-sm font-semibold text-muted-foreground">{title}</h2>
-			{trailing != null && (
-				<span className="text-xs text-muted-foreground/70">{trailing}</span>
-			)}
+			{trailing != null && <span className="text-xs text-muted-foreground/70">{trailing}</span>}
 		</div>
 	);
 }

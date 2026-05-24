@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
+import { createFileRoute } from "@tanstack/react-router";
 import { handleCreatePaste } from "../server/api.ts";
 import { getPasteRepository } from "../server/db.ts";
 

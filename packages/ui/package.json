@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Shared UI components (shadcn over Base UI) for paste.voila.dev",
-  "sideEffects": ["**/*.css"],
+  "sideEffects": [
+    "**/*.css"
+  ],
   "exports": {
     "./styles/globals.css": "./src/styles/globals.css",
     "./lib/utils": "./src/lib/utils.ts",

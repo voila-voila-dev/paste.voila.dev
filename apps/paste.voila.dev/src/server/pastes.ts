@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { PasteNotFoundError } from "@paste.voila.dev/domain/errors";
 import {
 	defaultEntryPath,
@@ -10,7 +11,6 @@ import {
 import { isValidPath, normalizePath } from "@paste.voila.dev/domain/paths";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
-import { env } from "cloudflare:workers";
 import { z } from "zod";
 import { getPasteRepository } from "./db.ts";
 

@@ -75,9 +75,7 @@ function EditPaste() {
 	}
 
 	const viewUrl =
-		typeof window !== "undefined"
-			? `${window.location.origin}/${data.id}`
-			: `/${data.id}`;
+		typeof window !== "undefined" ? `${window.location.origin}/${data.id}` : `/${data.id}`;
 	const editUrl = `${viewUrl}/edit#tk=${token}`;
 
 	return (
@@ -87,20 +85,11 @@ function EditPaste() {
 					<Link to="/" className="text-sm font-semibold hover:underline">
 						← paste.voila.dev
 					</Link>
-					<span className="text-xs text-muted-foreground">
-						editing {data.id.slice(0, 8)}
-					</span>
-					{!token && (
-						<span className="text-xs text-destructive">missing edit token</span>
-					)}
+					<span className="text-xs text-muted-foreground">editing {data.id.slice(0, 8)}</span>
+					{!token && <span className="text-xs text-destructive">missing edit token</span>}
 				</div>
 				<div className="flex items-center gap-2">
-					<Button
-						type="button"
-						size="sm"
-						variant="ghost"
-						onClick={() => setShowShare((s) => !s)}
-					>
+					<Button type="button" size="sm" variant="ghost" onClick={() => setShowShare((s) => !s)}>
 						Share
 					</Button>
 					<Link
@@ -118,19 +107,14 @@ function EditPaste() {
 					<ShareRow label="Read-only URL" url={viewUrl} />
 					<ShareRow label="Edit URL (keep secret)" url={editUrl} muted />
 					<p className="mt-2 text-muted-foreground/80">
-						Share the read-only link to publish. Share the edit link only with
-						people who should be able to change this paste.
+						Share the read-only link to publish. Share the edit link only with people who should be
+						able to change this paste.
 					</p>
 				</div>
 			)}
 
 			<div className="min-h-0 flex-1">
-				<PasteEditor
-					mode="edit"
-					pasteId={data.id}
-					initial={initial}
-					onSave={handleSave}
-				/>
+				<PasteEditor mode="edit" pasteId={data.id} initial={initial} onSave={handleSave} />
 			</div>
 
 			<footer className="flex items-center justify-between border-t px-4 py-2 text-xs text-muted-foreground">
@@ -172,15 +156,7 @@ function EditPaste() {
 	);
 }
 
-function ShareRow({
-	label,
-	url,
-	muted,
-}: {
-	label: string;
-	url: string;
-	muted?: boolean;
-}) {
+function ShareRow({ label, url, muted }: { label: string; url: string; muted?: boolean }) {
 	const [copied, setCopied] = useState(false);
 	async function copy() {
 		await navigator.clipboard.writeText(url);
