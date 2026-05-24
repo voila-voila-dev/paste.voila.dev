@@ -152,14 +152,36 @@ Server functions are called by the SPA via TanStack Start's RPC. The plain HTTP 
 
 | Method | Path                | Response                            |
 | ------ | ------------------- | ----------------------------------- |
-| `GET`  | `/{id}/raw`         | `text/markdown` — raw paste content |
-| `GET`  | `/{id}/download`    | `text/markdown` with `Content-Disposition: attachment` |
+| `POST` | `/api/pastes`       | JSON — create a paste (rate-limited 5/min) |
+| `GET`  | `/api/pastes/{id}`  | JSON — paste files + metadata       |
+| `GET`  | `/{id}/raw`         | `text/markdown` — raw content (add `?f={path}` for a file) |
+| `GET`  | `/{id}/download`    | `text/markdown` with `Content-Disposition: attachment` (`?f={path}`) |
+
+Create accepts either a single `content` string or a multi-file `files` array:
+
+```bash
+curl -X POST https://paste.voila.dev/api/pastes \
+  -H 'content-type: application/json' \
+  -d '{"files":[{"path":"README.md","content":"# Hi\n[docs](./docs/a.md)"},
+                {"path":"docs/a.md","content":"# A"}],"visibility":"unlisted"}'
+# → { id, url, editToken, entryPath, files: [{path}], … }
+```
 
 For everything else, talk to the app:
 
 - `GET /` — home, create form + recent pastes
-- `GET /{id}` — view rendered paste
+- `GET /{id}` — view rendered paste (`?f={path}` selects a file)
 - `GET /{id}/edit#tk={token}` — editor (edit token in fragment)
+
+### MCP server
+
+A hosted [MCP](https://modelcontextprotocol.io) server lets AI clients create and fetch pastes. Add it to Claude Code with one command — no install:
+
+```bash
+claude mcp add --transport http paste-voila https://paste.voila.dev/mcp
+```
+
+Tools: **`create_paste`** (single `content` or multi-file `files`, returns the URL + edit token) and **`get_paste`** (fetch by id). It's a stateless Streamable-HTTP endpoint served by the Worker; tool calls reuse the public API, so they share its validation and rate limiting.
 
 ## Configuration
 
