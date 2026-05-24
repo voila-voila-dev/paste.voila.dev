@@ -1,10 +1,13 @@
-import { PasteNotFoundError, PasteTooLargeError } from "@paste.voila.dev/domain/errors";
+import { PasteNotFoundError } from "@paste.voila.dev/domain/errors";
 import {
+	defaultEntryPath,
+	MAX_FILES,
 	MAX_PASTE_SIZE,
 	MAX_TITLE_LENGTH,
 	newPaste,
 	type Paste,
 } from "@paste.voila.dev/domain/paste";
+import { isValidPath, normalizePath } from "@paste.voila.dev/domain/paths";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { env } from "cloudflare:workers";
@@ -14,8 +17,33 @@ import { getPasteRepository } from "./db.ts";
 const titleField = z.string().max(MAX_TITLE_LENGTH).optional().nullable();
 const visibilityField = z.enum(["public", "unlisted"]).optional().default("public");
 
+const fileField = z.object({
+	path: z.string().refine(isValidPath, "Invalid file path"),
+	content: z.string(),
+});
+
+const filesField = z
+	.array(fileField)
+	.min(1)
+	.max(MAX_FILES)
+	.superRefine((files, ctx) => {
+		const total = files.reduce((sum, f) => sum + f.content.length, 0);
+		if (total > MAX_PASTE_SIZE) {
+			ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Paste exceeds 1 MB" });
+		}
+		const seen = new Set<string>();
+		for (const f of files) {
+			const p = normalizePath(f.path);
+			if (seen.has(p)) {
+				ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Duplicate path: ${p}` });
+			}
+			seen.add(p);
+		}
+	});
+
 const createInput = z.object({
-	content: z.string().min(1).max(MAX_PASTE_SIZE),
+	files: filesField,
+	entryPath: z.string().optional(),
 	title: titleField,
 	visibility: visibilityField,
 });
@@ -23,7 +51,8 @@ const createInput = z.object({
 const updateInput = z.object({
 	id: z.string(),
 	editToken: z.string(),
-	content: z.string().min(1).max(MAX_PASTE_SIZE),
+	files: filesField,
+	entryPath: z.string().optional(),
 	title: titleField,
 	visibility: visibilityField,
 });
@@ -58,6 +87,17 @@ function normalizeTitle(input: string | null | undefined): string | null {
 	return t ? t.slice(0, MAX_TITLE_LENGTH) : null;
 }
 
+/** Normalize incoming file paths and resolve the entry file. */
+function prepareFiles(files: { path: string; content: string }[], entryPath?: string) {
+	const normalized = files.map((f) => ({ path: normalizePath(f.path), content: f.content }));
+	const requested = entryPath ? normalizePath(entryPath) : undefined;
+	const resolvedEntry =
+		requested && normalized.some((f) => f.path === requested)
+			? requested
+			: defaultEntryPath(normalized);
+	return { files: normalized, entryPath: resolvedEntry };
+}
+
 export const listRecentPastes = createServerFn({ method: "GET" }).handler(async () => {
 	return getPasteRepository().findRecent(50);
 });
@@ -66,10 +106,11 @@ export const createPaste = createServerFn({ method: "POST" })
 	.inputValidator(createInput)
 	.handler(async ({ data }) => {
 		await enforce(env.CREATE_LIMITER, `create:${clientIp()}`);
-		if (data.content.length > MAX_PASTE_SIZE) {
-			throw new PasteTooLargeError(data.content.length, MAX_PASTE_SIZE);
-		}
-		const paste = newPaste(data.content, { title: data.title, visibility: data.visibility });
+		const paste = newPaste(data.files, {
+			title: data.title,
+			visibility: data.visibility,
+			entryPath: data.entryPath,
+		});
 		return getPasteRepository().create(paste);
 	});
 
@@ -91,8 +132,10 @@ export const updatePaste = createServerFn({ method: "POST" })
 		if (existing.editToken !== data.editToken) {
 			throw new Error("Invalid edit token");
 		}
+		const { files, entryPath } = prepareFiles(data.files, data.entryPath);
 		return repo.update(data.id, {
-			content: data.content,
+			files,
+			entryPath,
 			title: normalizeTitle(data.title),
 			visibility: data.visibility,
 		});

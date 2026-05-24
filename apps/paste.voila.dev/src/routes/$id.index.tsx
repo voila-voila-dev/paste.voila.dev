@@ -3,16 +3,33 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { renderMarkdown } from "../lib/markdown.ts";
 import { excerpt, OG_IMAGE_URL, SITE_NAME, SITE_URL } from "../lib/seo.ts";
 import { getPaste } from "../server/pastes.ts";
+import { FileTree } from "./-editor/file-tree.tsx";
 
 export const Route = createFileRoute("/$id/")({
-	loader: async ({ params }) => {
+	validateSearch: (search: Record<string, unknown>): { f?: string } => ({
+		f: typeof search.f === "string" ? search.f : undefined,
+	}),
+	loaderDeps: ({ search }) => ({ f: search.f }),
+	loader: async ({ params, deps }) => {
 		const paste = await getPaste({ data: { id: params.id } });
-		const html = renderMarkdown(paste.content);
+		const paths = paste.files.map((file) => file.path);
+		const activePath =
+			deps.f && paths.includes(deps.f) ? deps.f : paste.entryPath;
+		const active =
+			paste.files.find((file) => file.path === activePath) ?? paste.files[0];
+		const html = renderMarkdown(active?.content ?? "", {
+			pasteId: paste.id,
+			currentPath: activePath,
+			filePaths: new Set(paths),
+		});
 		return {
 			id: paste.id,
 			title: paste.title,
 			content: paste.content,
 			html,
+			paths,
+			activePath,
+			entryPath: paste.entryPath,
 			visibility: paste.visibility,
 			createdAt: paste.createdAt,
 			updatedAt: paste.updatedAt,
@@ -73,14 +90,19 @@ export const Route = createFileRoute("/$id/")({
 });
 
 function ViewPaste() {
-	const { id, title, html, updatedAt } = Route.useLoaderData();
+	const { id, title, html, paths, activePath, entryPath, updatedAt } =
+		Route.useLoaderData();
+	const navigate = Route.useNavigate();
+	const multiFile = paths.length > 1;
+	const fileSuffix =
+		activePath === entryPath ? "" : `?f=${encodeURIComponent(activePath)}`;
 
 	async function copyLink() {
 		await navigator.clipboard.writeText(window.location.href);
 	}
 
 	return (
-		<div className="mx-auto max-w-4xl p-6">
+		<div className="mx-auto max-w-5xl p-6">
 			<header className="mb-6 border-b pb-4">
 				<div className="flex items-center justify-between">
 					<Link to="/" className="text-sm font-semibold hover:underline">
@@ -91,16 +113,16 @@ function ViewPaste() {
 							Copy link
 						</Button>
 						<a
-							href={`/${id}/raw`}
+							href={`/${id}/raw${fileSuffix}`}
 							className="inline-flex h-8 items-center rounded-md px-3 text-xs font-medium hover:bg-accent"
 						>
 							Raw
 						</a>
 						<a
-							href={`/${id}/download`}
+							href={`/${id}/download${fileSuffix}`}
 							className="inline-flex h-8 items-center rounded-md border border-input bg-background px-3 text-xs font-medium hover:bg-accent"
 						>
-							Download .md
+							Download
 						</a>
 					</div>
 				</div>
@@ -113,11 +135,43 @@ function ViewPaste() {
 					</div>
 				)}
 			</header>
-			<article
-				className="prose prose-neutral dark:prose-invert max-w-none"
-				// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized
-				dangerouslySetInnerHTML={{ __html: html }}
-			/>
+
+			<div className={multiFile ? "flex gap-6" : ""}>
+				{multiFile && (
+					<aside className="w-56 shrink-0">
+						<div className="sticky top-6 rounded-md border bg-muted/20 py-2">
+							<div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+								Files
+							</div>
+							<FileTree
+								paths={paths}
+								activePath={activePath}
+								entryPath={entryPath}
+								onSelect={(p) =>
+									navigate({
+										to: "/$id",
+										params: { id },
+										search: { f: p === entryPath ? undefined : p },
+									})
+								}
+							/>
+						</div>
+					</aside>
+				)}
+				<div className="min-w-0 flex-1">
+					{multiFile && (
+						<p className="mb-3 font-mono text-xs text-muted-foreground">
+							{activePath}
+						</p>
+					)}
+					<article
+						className="prose prose-neutral dark:prose-invert max-w-none"
+						// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized
+						dangerouslySetInnerHTML={{ __html: html }}
+					/>
+				</div>
+			</div>
+
 			<footer className="mt-8 border-t pt-4 text-xs text-muted-foreground">
 				updated {new Date(updatedAt).toLocaleString()}
 			</footer>

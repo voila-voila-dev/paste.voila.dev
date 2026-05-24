@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./paste": "./src/paste.ts",
+    "./paths": "./src/paths.ts",
     "./ids": "./src/ids.ts",
     "./errors": "./src/errors.ts"
   },

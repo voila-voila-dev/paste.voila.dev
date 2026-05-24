@@ -1,34 +1,27 @@
-import type { Visibility } from "@paste.voila.dev/domain/paste";
 import { Button } from "@paste.voila.dev/ui/components/button";
-import { Input } from "@paste.voila.dev/ui/components/input";
-import { Textarea } from "@paste.voila.dev/ui/components/textarea";
-import { useForm } from "@tanstack/react-form";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { renderMarkdown } from "../lib/markdown.ts";
+import { extractTitle } from "../lib/format.ts";
 import { forgetPaste, rememberPaste } from "../lib/local-pastes.ts";
-import { VisibilityToggle } from "./-home/visibility-toggle.tsx";
 import { deletePaste, getPaste, updatePaste } from "../server/pastes.ts";
+import { type EditorSnapshot, PasteEditor } from "./-editor/paste-editor.tsx";
 
 export const Route = createFileRoute("/$id/edit")({
 	loader: async ({ params }) => {
 		const paste = await getPaste({ data: { id: params.id } });
 		return {
 			id: paste.id,
-			content: paste.content,
+			files: paste.files,
+			entryPath: paste.entryPath,
 			title: paste.title,
 			visibility: paste.visibility,
 		};
 	},
-	head: ({ params }) => ({ meta: [{ title: `edit · ${params.id.slice(0, 8)}` }] }),
+	head: ({ params }) => ({
+		meta: [{ title: `edit · ${params.id.slice(0, 8)}` }],
+	}),
 	component: EditPaste,
 });
-
-type FormValues = {
-	content: string;
-	title: string;
-	visibility: Visibility;
-};
 
 function readTokenFromHash(): string {
 	if (typeof window === "undefined") return "";
@@ -36,114 +29,78 @@ function readTokenFromHash(): string {
 	return new URLSearchParams(hash).get("tk") ?? "";
 }
 
-function extractFirstLine(content: string): string {
-	for (const line of content.split("\n")) {
-		const t = line.trim();
-		if (t) return t.replace(/^#+\s*/, "").slice(0, 80);
-	}
-	return "(empty paste)";
-}
-
 function EditPaste() {
 	const router = useRouter();
 	const data = Route.useLoaderData();
 	const [token, setToken] = useState("");
-	const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-	const [confirmingDelete, setConfirmingDelete] = useState(false);
 	const [showShare, setShowShare] = useState(false);
+	const [confirmingDelete, setConfirmingDelete] = useState(false);
 
 	useEffect(() => {
 		setToken(readTokenFromHash());
 	}, []);
 
-	const form = useForm({
-		defaultValues: {
-			content: data.content,
-			title: data.title ?? "",
-			visibility: data.visibility,
-		} satisfies FormValues,
-		onSubmit: async ({ value }) => {
-			if (!token) {
-				setStatus("error");
-				return;
-			}
-			setStatus("saving");
-			try {
-				const saved = await updatePaste({
-					data: {
-						id: data.id,
-						editToken: token,
-						content: value.content,
-						title: value.title || null,
-						visibility: value.visibility,
-					},
-				});
-				rememberPaste({
-					id: saved.id,
-					editToken: token,
-					title: saved.title ?? extractFirstLine(saved.content),
-					createdAt: new Date(saved.createdAt).toISOString(),
-				});
-				setStatus("saved");
-			} catch {
-				setStatus("error");
-			}
-		},
-	});
+	const initial: EditorSnapshot = {
+		files: data.files,
+		entryPath: data.entryPath,
+		title: data.title ?? "",
+		visibility: data.visibility,
+	};
+
+	async function handleSave(snapshot: EditorSnapshot) {
+		if (!token) throw new Error("missing edit token");
+		const saved = await updatePaste({
+			data: {
+				id: data.id,
+				editToken: token,
+				files: snapshot.files,
+				entryPath: snapshot.entryPath,
+				title: snapshot.title || null,
+				visibility: snapshot.visibility,
+			},
+		});
+		rememberPaste({
+			id: saved.id,
+			editToken: token,
+			title: saved.title ?? extractTitle(saved.content),
+			createdAt: new Date(saved.createdAt).toISOString(),
+		});
+	}
 
 	async function doDelete() {
 		if (!token) return;
-		try {
-			await deletePaste({ data: { id: data.id, editToken: token } });
-			forgetPaste(data.id);
-			router.navigate({ to: "/" });
-		} catch {
-			setStatus("error");
-		}
+		await deletePaste({ data: { id: data.id, editToken: token } });
+		forgetPaste(data.id);
+		router.navigate({ to: "/" });
 	}
 
-	useEffect(() => {
-		function onKey(e: KeyboardEvent) {
-			if ((e.metaKey || e.ctrlKey) && e.key === "s") {
-				e.preventDefault();
-				void form.handleSubmit();
-			}
-		}
-		window.addEventListener("keydown", onKey);
-		return () => window.removeEventListener("keydown", onKey);
-	});
-
 	const viewUrl =
-		typeof window !== "undefined" ? `${window.location.origin}/${data.id}` : `/${data.id}`;
+		typeof window !== "undefined"
+			? `${window.location.origin}/${data.id}`
+			: `/${data.id}`;
 	const editUrl = `${viewUrl}/edit#tk=${token}`;
 
 	return (
-		<form
-			onSubmit={(e) => {
-				e.preventDefault();
-				void form.handleSubmit();
-			}}
-			className="flex h-screen flex-col"
-		>
+		<div className="flex h-screen flex-col">
 			<header className="flex items-center justify-between border-b px-4 py-2">
 				<div className="flex items-center gap-4">
 					<Link to="/" className="text-sm font-semibold hover:underline">
 						← paste.voila.dev
 					</Link>
-					<span className="text-xs text-muted-foreground">editing {data.id.slice(0, 8)}</span>
+					<span className="text-xs text-muted-foreground">
+						editing {data.id.slice(0, 8)}
+					</span>
+					{!token && (
+						<span className="text-xs text-destructive">missing edit token</span>
+					)}
 				</div>
 				<div className="flex items-center gap-2">
-					<form.Subscribe selector={(s) => s.isSubmitting}>
-						{(isSubmitting) => (
-							<span className="text-xs text-muted-foreground">
-								{isSubmitting && "saving…"}
-								{!isSubmitting && status === "saved" && "saved"}
-								{!isSubmitting && status === "error" && !token && "missing edit token"}
-								{!isSubmitting && status === "error" && token && "operation failed"}
-							</span>
-						)}
-					</form.Subscribe>
-					<Button type="button" size="sm" variant="ghost" onClick={() => setShowShare((s) => !s)}>
+					<Button
+						type="button"
+						size="sm"
+						variant="ghost"
+						onClick={() => setShowShare((s) => !s)}
+					>
 						Share
 					</Button>
 					<Link
@@ -153,13 +110,6 @@ function EditPaste() {
 					>
 						View
 					</Link>
-					<form.Subscribe selector={(s) => s.isSubmitting}>
-						{(isSubmitting) => (
-							<Button type="submit" size="sm" disabled={!token || isSubmitting}>
-								Save
-							</Button>
-						)}
-					</form.Subscribe>
 				</div>
 			</header>
 
@@ -168,50 +118,19 @@ function EditPaste() {
 					<ShareRow label="Read-only URL" url={viewUrl} />
 					<ShareRow label="Edit URL (keep secret)" url={editUrl} muted />
 					<p className="mt-2 text-muted-foreground/80">
-						Share the read-only link to publish. Share the edit link only with people who should be
-						able to change this paste.
+						Share the read-only link to publish. Share the edit link only with
+						people who should be able to change this paste.
 					</p>
 				</div>
 			)}
 
-			<div className="flex items-center gap-3 border-b bg-background px-4 py-2">
-				<form.Field name="title">
-					{(field) => (
-						<Input
-							value={field.state.value}
-							onChange={(e) => field.handleChange(e.target.value)}
-							placeholder="Title (optional)"
-							maxLength={120}
-							className="h-8 flex-1 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
-						/>
-					)}
-				</form.Field>
-				<form.Field name="visibility">
-					{(field) => (
-						<VisibilityToggle value={field.state.value} onChange={field.handleChange} />
-					)}
-				</form.Field>
-			</div>
-
-			<div className="grid flex-1 grid-cols-2 overflow-hidden">
-				<form.Field name="content">
-					{(field) => (
-						<Textarea
-							value={field.state.value}
-							onChange={(e) => field.handleChange(e.target.value)}
-							className="h-full resize-none rounded-none border-0 border-r font-mono text-sm focus-visible:ring-0"
-						/>
-					)}
-				</form.Field>
-				<form.Subscribe selector={(s) => s.values.content}>
-					{(content) => (
-						<article
-							className="prose prose-neutral dark:prose-invert max-w-none overflow-auto p-6"
-							// biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized
-							dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
-						/>
-					)}
-				</form.Subscribe>
+			<div className="min-h-0 flex-1">
+				<PasteEditor
+					mode="edit"
+					pasteId={data.id}
+					initial={initial}
+					onSave={handleSave}
+				/>
 			</div>
 
 			<footer className="flex items-center justify-between border-t px-4 py-2 text-xs text-muted-foreground">
@@ -249,11 +168,19 @@ function EditPaste() {
 					</Button>
 				)}
 			</footer>
-		</form>
+		</div>
 	);
 }
 
-function ShareRow({ label, url, muted }: { label: string; url: string; muted?: boolean }) {
+function ShareRow({
+	label,
+	url,
+	muted,
+}: {
+	label: string;
+	url: string;
+	muted?: boolean;
+}) {
 	const [copied, setCopied] = useState(false);
 	async function copy() {
 		await navigator.clipboard.writeText(url);

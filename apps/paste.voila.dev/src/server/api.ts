@@ -1,16 +1,25 @@
 import {
+	MAX_FILES,
 	MAX_PASTE_SIZE,
 	MAX_TITLE_LENGTH,
 	newPaste,
+	type PasteFile,
 	type PasteRepository,
-	toSummary,
 } from "@paste.voila.dev/domain/paste";
+import { isValidPath, normalizePath } from "@paste.voila.dev/domain/paths";
 import { z } from "zod";
 
 export const SITE_URL = "https://paste.voila.dev";
 
+const fileSchema = z.object({
+	path: z.string().refine(isValidPath, "Invalid file path"),
+	content: z.string(),
+});
+
 const createBody = z.object({
-	content: z.string().min(1).max(MAX_PASTE_SIZE),
+	files: z.array(fileSchema).min(1).max(MAX_FILES).optional(),
+	content: z.string().min(1).max(MAX_PASTE_SIZE).optional(),
+	entryPath: z.string().optional(),
 	title: z.string().max(MAX_TITLE_LENGTH).optional().nullable(),
 	visibility: z.enum(["public", "unlisted"]).optional().default("public"),
 });
@@ -38,6 +47,13 @@ function json(body: unknown, init: ResponseInit = {}): Response {
 			...init.headers,
 		},
 	});
+}
+
+/** Accept either an explicit `files` array or a legacy single `content` string. */
+function collectFiles(data: z.infer<typeof createBody>): PasteFile[] {
+	if (data.files && data.files.length > 0) return data.files;
+	if (data.content != null) return [{ path: "index.md", content: data.content }];
+	return [];
 }
 
 export async function handleCreatePaste(
@@ -70,10 +86,36 @@ export async function handleCreatePaste(
 		);
 	}
 
+	const files = collectFiles(parsed.data);
+	if (files.length === 0) {
+		return json(
+			{ error: "invalid_input", message: "Provide a `files` array or a `content` string." },
+			{ status: 400 },
+		);
+	}
+
+	const seen = new Set<string>();
+	for (const f of files) {
+		const p = normalizePath(f.path);
+		if (seen.has(p)) {
+			return json({ error: "invalid_input", message: `Duplicate path: ${p}` }, { status: 400 });
+		}
+		seen.add(p);
+	}
+
+	const total = files.reduce((sum, f) => sum + f.content.length, 0);
+	if (total > MAX_PASTE_SIZE) {
+		return json(
+			{ error: "too_large", message: `Total content exceeds ${MAX_PASTE_SIZE} bytes.` },
+			{ status: 413 },
+		);
+	}
+
 	const created = await repo.create(
-		newPaste(parsed.data.content, {
+		newPaste(files, {
 			title: parsed.data.title,
 			visibility: parsed.data.visibility,
+			entryPath: parsed.data.entryPath,
 		}),
 	);
 
@@ -83,6 +125,8 @@ export async function handleCreatePaste(
 			url: `${SITE_URL}/${created.id}`,
 			rawUrl: `${SITE_URL}/${created.id}/raw`,
 			editToken: created.editToken,
+			entryPath: created.entryPath,
+			files: created.files.map((f) => ({ path: f.path })),
 			title: created.title,
 			visibility: created.visibility,
 			createdAt: created.createdAt.toISOString(),
@@ -100,17 +144,18 @@ export async function handleGetPaste(
 		return json({ error: "not_found", message: `Paste not found: ${id}` }, { status: 404 });
 	}
 
-	const summary = toSummary(paste);
 	return json(
 		{
-			id: summary.id,
-			url: `${SITE_URL}/${summary.id}`,
-			rawUrl: `${SITE_URL}/${summary.id}/raw`,
-			content: summary.content,
-			title: summary.title,
-			visibility: summary.visibility,
-			createdAt: summary.createdAt.toISOString(),
-			updatedAt: summary.updatedAt.toISOString(),
+			id: paste.id,
+			url: `${SITE_URL}/${paste.id}`,
+			rawUrl: `${SITE_URL}/${paste.id}/raw`,
+			entryPath: paste.entryPath,
+			files: paste.files.map((f) => ({ path: f.path, content: f.content })),
+			content: paste.content,
+			title: paste.title,
+			visibility: paste.visibility,
+			createdAt: paste.createdAt.toISOString(),
+			updatedAt: paste.updatedAt.toISOString(),
 		},
 		{ status: 200, headers: { "cache-control": "public, max-age=60" } },
 	);

@@ -17,6 +17,7 @@ export function RecentPastes({ pastes }: { pastes: PasteSummary[] }) {
 							id={p.id}
 							title={p.title}
 							content={p.content}
+							fileCount={p.fileCount}
 							createdAt={p.createdAt}
 						/>
 					))}
@@ -30,11 +31,13 @@ function RecentPasteRow({
 	id,
 	title,
 	content,
+	fileCount,
 	createdAt,
 }: {
 	id: string;
 	title: string | null;
 	content: string;
+	fileCount: number;
 	createdAt: Date | string;
 }) {
 	return (
@@ -45,7 +48,10 @@ function RecentPasteRow({
 				className="flex items-center justify-between px-3 py-2 text-sm hover:bg-accent"
 			>
 				<span className="truncate font-medium">{title ?? extractTitle(content)}</span>
-				<span className="ml-4 shrink-0 text-xs text-muted-foreground">{timeAgo(createdAt)}</span>
+				<span className="ml-4 flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+					{fileCount > 1 && <span>{fileCount} files</span>}
+					{timeAgo(createdAt)}
+				</span>
 			</Link>
 		</li>
 	);
