@@ -2,13 +2,7 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
-import {
-	OG_IMAGE_URL,
-	SITE_DESCRIPTION,
-	SITE_NAME,
-	SITE_TAGLINE,
-	SITE_URL,
-} from "../lib/seo.ts";
+import { OG_IMAGE_URL, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "../lib/seo.ts";
 import appCss from "../styles.css?url";
 
 const DEFAULT_TITLE = `${SITE_NAME} — ${SITE_TAGLINE}`;
@@ -65,6 +59,11 @@ export const Route = createRootRoute({
 					description: SITE_DESCRIPTION,
 					url: SITE_URL,
 				}),
+			},
+			{
+				src: "https://app.rybbit.io/api/script.js",
+				"data-site-id": "dd8e32224c9a",
+				defer: true,
 			},
 		],
 	}),
