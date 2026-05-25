@@ -142,25 +142,27 @@ function ViewPaste() {
 				)}
 			</header>
 
-			<div className={multiFile ? "flex gap-6" : ""}>
+			<div className={multiFile ? "flex flex-col gap-6 md:flex-row" : ""}>
 				{multiFile && (
-					<aside className="w-56 shrink-0">
-						<div className="sticky top-6 rounded-md border bg-muted/20 py-2">
+					<aside className="w-full shrink-0 md:w-56">
+						<div className="rounded-md border bg-muted/20 py-2 md:sticky md:top-6">
 							<div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
 								Files
 							</div>
-							<FileTree
-								paths={paths}
-								activePath={activePath}
-								entryPath={entryPath}
-								onSelect={(p) =>
-									navigate({
-										to: "/$id",
-										params: { id },
-										search: { f: p === entryPath ? undefined : p },
-									})
-								}
-							/>
+							<div className="max-h-60 overflow-auto md:max-h-none">
+								<FileTree
+									paths={paths}
+									activePath={activePath}
+									entryPath={entryPath}
+									onSelect={(p) =>
+										navigate({
+											to: "/$id",
+											params: { id },
+											search: { f: p === entryPath ? undefined : p },
+										})
+									}
+								/>
+							</div>
 						</div>
 					</aside>
 				)}
