@@ -14,6 +14,8 @@ export const Route = createFileRoute("/$id/edit")({
 			files: paste.files,
 			entryPath: paste.entryPath,
 			title: paste.title,
+			content: paste.content,
+			createdAt: paste.createdAt,
 			visibility: paste.visibility,
 		};
 	},
@@ -39,6 +41,16 @@ function EditPaste() {
 	useEffect(() => {
 		setToken(readTokenFromHash());
 	}, []);
+
+	// Opening the editor remembers the paste — with the edit token if the URL carried one.
+	useEffect(() => {
+		rememberPaste({
+			id: data.id,
+			editToken: token || undefined,
+			title: data.title ?? extractTitle(data.content),
+			createdAt: new Date(data.createdAt).toISOString(),
+		});
+	}, [token, data]);
 
 	const initial: EditorSnapshot = {
 		files: data.files,

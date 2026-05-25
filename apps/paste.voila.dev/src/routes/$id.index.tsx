@@ -1,5 +1,8 @@
 import { Button } from "@paste.voila.dev/ui/components/button";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { extractTitle } from "../lib/format.ts";
+import { rememberPaste } from "../lib/local-pastes.ts";
 import { renderMarkdown } from "../lib/markdown.ts";
 import { excerpt, OG_IMAGE_URL, SITE_NAME, SITE_URL } from "../lib/seo.ts";
 import { getPaste } from "../server/pastes.ts";
@@ -85,9 +88,19 @@ export const Route = createFileRoute("/$id/")({
 });
 
 function ViewPaste() {
-	const { id, title, html, paths, activePath, entryPath, updatedAt } = Route.useLoaderData();
+	const { id, title, content, html, paths, activePath, entryPath, createdAt, updatedAt } =
+		Route.useLoaderData();
 	const navigate = Route.useNavigate();
 	const multiFile = paths.length > 1;
+
+	// Viewing a paste adds it to "Your pastes" (read-only unless an edit token is already known).
+	useEffect(() => {
+		rememberPaste({
+			id,
+			title: title ?? extractTitle(content),
+			createdAt: new Date(createdAt).toISOString(),
+		});
+	}, [id, title, content, createdAt]);
 	const fileSuffix = activePath === entryPath ? "" : `?f=${encodeURIComponent(activePath)}`;
 
 	async function copyLink() {

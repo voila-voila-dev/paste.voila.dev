@@ -16,25 +16,34 @@ export function YourPastes() {
 				))}
 			</ul>
 			<SectionNote>
-				Stored only in this browser's local storage. Clear your browser data and these links are
-				gone — copy the edit URL somewhere safe if you want to come back to it later.
+				Pastes you've created or opened, stored only in this browser's local storage. Clear your
+				browser data and these links are gone — copy the edit URL somewhere safe if you want to come
+				back to it later.
 			</SectionNote>
 		</Section>
 	);
 }
 
 function YourPasteRow({ paste }: { paste: LocalPaste }) {
+	const canEdit = Boolean(paste.editToken);
 	return (
 		<li className="flex items-center justify-between px-3 py-2 text-sm hover:bg-accent">
-			<Link
-				to="/$id/edit"
-				params={{ id: paste.id }}
-				hash={`tk=${paste.editToken}`}
-				className="flex-1 truncate font-medium"
-			>
-				{paste.title}
-			</Link>
+			{canEdit ? (
+				<Link
+					to="/$id/edit"
+					params={{ id: paste.id }}
+					hash={`tk=${paste.editToken}`}
+					className="flex-1 truncate font-medium"
+				>
+					{paste.title}
+				</Link>
+			) : (
+				<Link to="/$id" params={{ id: paste.id }} className="flex-1 truncate font-medium">
+					{paste.title}
+				</Link>
+			)}
 			<div className="ml-4 flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
+				{!canEdit && <span className="text-muted-foreground/60">read-only</span>}
 				<Link to="/$id" params={{ id: paste.id }} className="hover:underline">
 					view
 				</Link>

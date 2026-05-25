@@ -4,7 +4,8 @@ const STORAGE_KEY = "paste.voila.dev:my-pastes";
 
 export type LocalPaste = {
 	id: string;
-	editToken: string;
+	/** Present when the user has edit rights (created it, or arrived via an edit link). */
+	editToken?: string;
 	title: string;
 	createdAt: string;
 };
@@ -28,9 +29,15 @@ function write(pastes: LocalPaste[]): void {
 }
 
 export function rememberPaste(p: LocalPaste): void {
-	const all = read().filter((x) => x.id !== p.id);
-	all.unshift(p);
-	write(all.slice(0, 100));
+	const all = read();
+	const existing = all.find((x) => x.id === p.id);
+	// Merge so re-viewing a paste you own never drops its edit token.
+	const merged: LocalPaste = {
+		...existing,
+		...p,
+		editToken: p.editToken ?? existing?.editToken,
+	};
+	write([merged, ...all.filter((x) => x.id !== p.id)].slice(0, 100));
 }
 
 export function forgetPaste(id: string): void {
