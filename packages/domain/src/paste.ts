@@ -3,7 +3,7 @@ import { normalizePath } from "./paths.ts";
 
 export const MAX_PASTE_SIZE = 1024 * 1024; // 1 MB (total across files)
 export const MAX_TITLE_LENGTH = 120;
-export const MAX_FILES = 50;
+export const MAX_FILES = 200;
 
 export type Visibility = "public" | "unlisted";
 
