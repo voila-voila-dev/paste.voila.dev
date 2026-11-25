@@ -65,6 +65,12 @@ export const Route = createRootRoute({
 				"data-site-id": "dd8e32224c9a",
 				defer: true,
 			},
+			// Cookie-free analytics (analytics.voila.dev), alongside Rybbit until the switch.
+			{
+				src: "https://lumen.voila.dev/s.js",
+				"data-property": "e8626b25-ad17-429d-ae93-00256011fe72",
+				defer: true,
+			},
 		],
 	}),
 	shellComponent: RootDocument,
